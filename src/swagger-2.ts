@@ -110,21 +110,21 @@ function parse(spec: Swagger2, options: Swagger2Options = {}): string {
 
     if (items && items.$ref) {
       const [refName] = getRef(items.$ref);
-      return `${getType(items, refName, getTypeOptions)}[]`;
+      return `ReadonlyArray<${getType(items, refName, getTypeOptions)}>`;
     }
 
     if (items) {
       // if an array, keep nesting
       if (items.type === 'array') {
-        return `${getType(items, nestedName, getTypeOptions)}[]`;
+        return `ReadonlyArray<${getType(items, nestedName, getTypeOptions)}>`;
       }
       // else if primitive, return type
       if (items.type && PRIMITIVE[items.type]) {
-        return `${PRIMITIVE[items.type]}[]`;
+        return `ReadonlyArray<${PRIMITIVE[items.type]}>`;
       }
       // otherwise if this is an array of nested types, return that interface for later
       queue.push([nextInterface, items]);
-      return `${nextInterface}[]`;
+      return `ReadonlyArray<${nextInterface}>`;
     }
 
     if (Array.isArray(value.oneOf)) {
@@ -217,9 +217,11 @@ function parse(spec: Swagger2, options: Swagger2Options = {}): string {
       }
 
       if (value.additionalProperties) {
-        output.push(`${name}: { ${handleAdditionalProperties(value.additionalProperties)} }`);
+        output.push(
+          `readonly ${name}: { ${handleAdditionalProperties(value.additionalProperties)} }`
+        );
       } else {
-        output.push(`${name}: ${interfaceType};`);
+        output.push(`readonly ${name}: ${interfaceType};`);
       }
     });
 
@@ -250,7 +252,7 @@ function parse(spec: Swagger2, options: Swagger2Options = {}): string {
     output.push('}'); // Close namespace
   }
 
-  return prettier.format(output.join('\n'), { parser: 'typescript', singleQuote: true });
+  return prettier.format(output.join('\n'), { parser: 'typescript' });
 }
 
 export default parse;
